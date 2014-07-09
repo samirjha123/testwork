@@ -9,8 +9,6 @@ unless node.recipe?('java::default')
   end
 end
 
-jdk = Opscode::OpenJDK.new(node)
-
 if platform_requires_license_acceptance?
   file "/opt/local/.dlj_license_accepted" do
     owner "root"
