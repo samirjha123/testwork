@@ -1,16 +1,18 @@
-unless node.recipe?('java::default')
-  Chef::Log.warn("Using java::default instead is recommended.")
+java_location = Opscode::OpenJDK.new(node).java_location
 
-  # Even if this recipe is included by itself, a safety check is nice...
-  [ node['java']['openjdk_packages'], node['java']['java_home'] ].each do |v|
-    if v.nil? or v.empty?
-      include_recipe "java::set_attributes_from_version"
-    end
+include_recipe 'java::set_java_home'
+
+if platform_family?('debian', 'rhel', 'fedora')
+
+  bash 'update-java-alternatives' do
+    code <<-EOH.gsub(/^\s+/, '')
+      update-alternatives --install /usr/bin/java java #{java_location} 1061 && \
+      update-alternatives --set java #{java_location}
+    EOH
+    action :nothing
   end
+
 end
-
-jdk = Opscode::OpenJDK.new(node) 
-
 
 if platform_requires_license_acceptance?
   file "/opt/local/.dlj_license_accepted" do
@@ -23,10 +25,8 @@ if platform_requires_license_acceptance?
 end
 
 node['java']['openjdk_packages'].each do |pkg|
-  package pkg
+  package pkg do
+    action :install
+    notifies :run, 'bash[update-java-alternatives]', :immediately if platform_family?('debian', 'rhel', 'fedora')
+  end
 end
-
-
-# We must include this recipe AFTER updating the alternatives or else JAVA_HOME
-# will not point to the correct java.
-include_recipe 'java::set_java_home'
