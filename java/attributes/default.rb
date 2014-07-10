@@ -3,6 +3,7 @@ default['java']['arch'] = kernel['machine'] =~ /x86_64/ ? "x86_64" : "i586"
 default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk"]
 default['java']['accept_license_agreement'] = true
 default['java']['set_default'] = true
+default['java']['java_home'] = "/usr/java/latest"
 
 # the following retry parameters apply when downloading oracle java
 default['java']['ark_retries'] = 0
