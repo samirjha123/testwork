@@ -1,4 +1,5 @@
-case platform
+
+case node['platform']
 when "debian"
 
   if platform_version.to_f == 5.0
