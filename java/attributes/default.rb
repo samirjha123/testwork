@@ -1,6 +1,6 @@
 default['java']['jdk_version'] = '6'
 default['java']['arch'] = kernel['machine'] =~ /x86_64/ ? "x86_64" : "i586"
-default['java']['openjdk_packages'] = []
+default['java']['openjdk_packages'] = ["openjdk-#{node['java']['jdk_version']}-jdk"]
 default['java']['accept_license_agreement'] = false
 default['java']['set_default'] = true
 
@@ -11,7 +11,7 @@ default['java']['ark_retry_delay'] = 2
 case node['platform_family']
 when "amazon"
   default['java']['install_flavor'] = "openjdk"
-  default['java']['jdk_version'] = '7'
+  default['java']['jdk_version'] = '6'
   default['java']['java_home'] = "/usr/java/latest"
 end
 
