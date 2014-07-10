@@ -9,30 +9,9 @@ default['java']['ark_retries'] = 0
 default['java']['ark_retry_delay'] = 2
 
 case node['platform_family']
-when "windows"
-  default['java']['install_flavor'] = "windows"
-  default['java']['windows']['url'] = nil
-  default['java']['windows']['checksum'] = nil
-  default['java']['windows']['package_name'] = "Java(TM) SE Development Kit 7 (64-bit)"
-else
+when "amazon"
   default['java']['install_flavor'] = "openjdk"
-end
-
-case node['java']['install_flavor']
-when 'ibm', 'ibm_tar'
-  default['java']['ibm']['url'] = nil
-  default['java']['ibm']['checksum'] = nil
-  default['java']['ibm']['accept_ibm_download_terms'] = false
-  default['java']['java_home'] = "/opt/ibm/java"
-
-  default['java']['ibm']['6']['bin_cmds'] = [ "appletviewer", "apt", "ControlPanel", "extcheck", "HtmlConverter", "idlj", "jar", "jarsigner",
-                                              "java", "javac", "javadoc", "javah", "javap", "javaws", "jconsole", "jcontrol", "jdb", "jdmpview",
-                                              "jrunscript", "keytool", "native2ascii", "policytool", "rmic", "rmid", "rmiregistry",
-                                              "schemagen", "serialver", "tnameserv", "wsgen", "wsimport", "xjc" ]
-
-  default['java']['ibm']['7']['bin_cmds'] = node['java']['ibm']['6']['bin_cmds'] + [ "pack200", "unpack200" ]
-when 'oracle_rpm'
-  default['java']['oracle_rpm']['type'] = 'jdk'
+  default['java']['jdk_version'] = '7'
   default['java']['java_home'] = "/usr/java/latest"
 end
 
