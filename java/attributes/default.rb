@@ -1,20 +1,20 @@
 default['java']['jdk_version'] = '6'
 default['java']['arch'] = kernel['machine'] =~ /x86_64/ ? "x86_64" : "i586"
-default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk"]
+default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk.x86_64"]
 default['java']['accept_license_agreement'] = true
 default['java']['set_default'] = true
-default['java']['java_home'] = "/usr/lib/jvm/default-java"
+default['java']['java_home'] = "/usr/lib/jvm/java-1.#{node['java']['jdk_version']}.0-openjdk.x86_64"
 
 # the following retry parameters apply when downloading oracle java
 default['java']['ark_retries'] = 0
 default['java']['ark_retry_delay'] = 2
 
-case node['platform_family']
-when "amazon"
-  default['java']['install_flavor'] = "openjdk"
-  default['java']['jdk_version'] = '6'
-  default['java']['java_home'] = "/usr/java/latest"
-end
+#case node['platform_family']
+#when "amazon"
+ # default['java']['install_flavor'] = "openjdk"
+  #default['java']['jdk_version'] = '6'
+  #default['java']['java_home'] = "/usr/java/latest"
+#end
 
 # if you change this to true, you can download directly from Oracle
 default['java']['oracle']['accept_oracle_download_terms'] = false
