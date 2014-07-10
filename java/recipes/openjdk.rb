@@ -1,5 +1,3 @@
-java_location = Opscode::OpenJDK.new(node).java_location
-
 include_recipe 'java::set_java_home'
 
 if platform_requires_license_acceptance?
