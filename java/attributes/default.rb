@@ -1,5 +1,5 @@
 default['java']['jdk_version'] = '6'
-default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk.x86_64"]
+default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk"]
 default['java']['accept_license_agreement'] = true
 default['java']['set_default'] = true
 default['java']['java_home'] = "/usr/lib/jvm/java-1.#{node['java']['jdk_version']}.0-openjdk.x86_64"
