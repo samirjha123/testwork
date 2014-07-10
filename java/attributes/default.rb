@@ -1,6 +1,6 @@
 default['java']['jdk_version'] = '6'
 default['java']['arch'] = kernel['machine'] =~ /x86_64/ ? "x86_64" : "i586"
-default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk-devel.x86_64"]
+default['java']['openjdk_packages'] = ["java-1.#{node['java']['jdk_version']}.0-openjdk"]
 default['java']['accept_license_agreement'] = false
 default['java']['set_default'] = true
 
