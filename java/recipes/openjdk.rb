@@ -15,6 +15,5 @@ end
 node['java']['openjdk_packages'].each do |pkg|
   package pkg do
     action :install
-    notifies :run
   end
 end
