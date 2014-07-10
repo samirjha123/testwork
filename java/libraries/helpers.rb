@@ -1,3 +1,26 @@
+require 'chef/version_constraint'
+require 'uri'
+require 'pathname'
+
+module Opscode
+  class OpenJDK
+
+    attr_accessor :java_home, :jdk_version
+
+    def initialize(node)
+      @node = node.to_hash
+      @java_home = @node['java']['java_home'] || '/usr/lib/jvm/default-java'
+      @jdk_version = @node['java']['jdk_version'] || '6'
+    end
+
+    def java_location
+      File.join(java_home_parent(@java_home), openjdk_path, 'bin/java')
+    end
+
+    def java_home_parent(java_home)
+      Pathname.new(java_home).parent.to_s
+    end
+
     def openjdk_path
       case @node['platform_family']
       when 'debian'
