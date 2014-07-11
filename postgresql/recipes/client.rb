@@ -14,6 +14,6 @@ end
   #end.run_action(:install)
 #end
 
-gem_package "pg" do
-  action :nothing
-end.run_action(:install)
+#gem_package "pg" do
+  #action :nothing
+#end.run_action(:install)
