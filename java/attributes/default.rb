@@ -12,8 +12,6 @@ default['java']['install_flavor'] = "openjdk"
   #default['java']['java_home'] = "/usr/java/latest"
 #end
 
-# if you change this to true, you can download directly from Oracle
-default['java']['oracle']['accept_oracle_download_terms'] = false
 
 # direct download paths for oracle, you have been warned!
 
