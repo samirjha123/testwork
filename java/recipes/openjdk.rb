@@ -1,5 +1,5 @@
 include_recipe 'java::set_java_home'
-
+jdk = Opscode::OpenJDK.new(node)
 if platform_requires_license_acceptance?
   file "/opt/local/.dlj_license_accepted" do
     owner "root"
