@@ -14,5 +14,5 @@ node['java']['openjdk_packages'].each do |pkg|
   package pkg
   #  action :install
     #notifies :run, 'bash[update-java-alternatives]'
-  end
+  # end
 end
