@@ -12,9 +12,6 @@ default['java']['install_flavor'] = "openjdk"
   #default['java']['java_home'] = "/usr/java/latest"
 #end
 
-
-# direct download paths for oracle, you have been warned!
-
 # jdk6 attributes
 default['java']['jdk']['6']['bin_cmds'] = [ "appletviewer", "apt", "ControlPanel", "extcheck", "HtmlConverter", "idlj", "jar", "jarsigner",
                                             "java", "javac", "javadoc", "javah", "javap", "javaws", "jconsole", "jcontrol", "jdb", "jhat",
