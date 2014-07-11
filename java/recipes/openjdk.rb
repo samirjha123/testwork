@@ -19,15 +19,15 @@ end
 
 
 
-  java_alternatives 'set-java-alternatives' do
-    java_location jdk.java_home
-    default node['java']['set_default']
-    priority jdk.alternatives_priority
-    case node['java']['jdk_version'].to_s
-    when "6"
-      bin_cmds node['java']['jdk']['6']['bin_cmds']
-    when "7"
-      bin_cmds node['java']['jdk']['7']['bin_cmds']
-    end
-    action :set
+java_alternatives 'set-java-alternatives' do
+  java_location jdk.java_home
+  default node['java']['set_default']
+  priority jdk.alternatives_priority
+  case node['java']['jdk_version'].to_s
+  when "6"
+    bin_cmds node['java']['jdk']['6']['bin_cmds']
+  when "7"
+    bin_cmds node['java']['jdk']['7']['bin_cmds']
   end
+  action :set
+end
