@@ -1,5 +1,5 @@
 Description
-Installs and configures PostgreSQL as a client or a server.
+Installs PostgreSQL as a client
 
 Changes/Roadmap
 v 0.99.0
