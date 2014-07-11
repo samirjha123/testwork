@@ -11,7 +11,7 @@ if platform_requires_license_acceptance?
 end
 
 node['java']['openjdk_packages'].each do |pkg|
-  package pkg
+  package pkg do
     action :install
     #notifies :run, 'bash[update-java-alternatives]'
   end
