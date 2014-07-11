@@ -1,4 +1,4 @@
-default['java']['jdk_version'] = '6'
+default['java']['jdk_version'] = '7'
 default['java']['accept_license_agreement'] = false
 default['java']['set_default'] = true
 default['java']['java_home'] = "/usr/lib/jvm/java-1.#{node['java']['jdk_version']}.0"
