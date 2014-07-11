@@ -1,8 +1,8 @@
 default['java']['jdk_version'] = '6'
 default['java']['accept_license_agreement'] = false
 default['java']['set_default'] = true
-node.default['java']['java_home'] = "/usr/lib/jvm/java-1.#{node['java']['jdk_version']}.0"
-node.default['java']['openjdk_packages'] = "java-1.#{node['java']['jdk_version']}.0-openjdk"
+default['java']['java_home'] = "/usr/lib/jvm/java-1.#{node['java']['jdk_version']}.0"
+default['java']['openjdk_packages'] = "java-1.#{node['java']['jdk_version']}.0-openjdk"
 # the following retry parameters apply when downloading oracle java
 default['java']['ark_retries'] = 0
 default['java']['ark_retry_delay'] = 2
