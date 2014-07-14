@@ -26,7 +26,7 @@ case node['platform']
 when "centos", "redhat", "amazon"
   yum_repository "treasure-data" do
     url "http://packages.treasuredata.com/redhat/$basearch"
-    gpgkey "http://packages.treasuredata.com/GPG-KEY-td-agent"
+    # gpgkey "http://packages.treasuredata.com/GPG-KEY-td-agent"
     action :add
   end
 end
