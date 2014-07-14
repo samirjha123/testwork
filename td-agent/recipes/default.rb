@@ -25,8 +25,8 @@ end
 case node['platform']
 when "centos", "redhat", "amazon"
   yum_repository "treasure-data" do
-    url "http://packages.treasuredata.com/redhat/$basearch"
-    # gpgkey "http://packages.treasuredata.com/GPG-KEY-td-agent"
+    url "http://packages.treasure-data.com/redhat/$basearch"
+#    gpgkey "http://packages.treasure-data.com/redhat/RPM-GPG-KEY-td-agent"
     action :add
   end
 end
@@ -43,27 +43,23 @@ if node['td_agent']['includes']
 end
 
 package "td-agent" do
-  if node[:td_agent][:pinning_version]
-    action :install
-    version node[:td_agent][:version]
-  else
-    action :upgrade
-  end
+  action :upgrade
+  version node[:td_agent][:version] if node[:td_agent][:pinning_version]
 end
 
 node[:td_agent][:plugins].each do |plugin|
   if plugin.is_a?(Hash)
-   plugin_name, plugin_attributes = plugin.first
-   td_agent_gem plugin_name do
-     plugin true
-     %w{action version source options gem_binary}.each do |attr|
-     send(attr, plugin_attributes[attr]) if plugin_attributes[attr]
-   end
-  end
+    plugin_name, plugin_attributes = plugin.first
+    td_agent_gem plugin_name do
+      plugin true
+      %w{action version source options gem_binary}.each do |attr|
+        send(attr, plugin_attributes[attr]) if plugin_attributes[attr]
+      end
+    end
   elsif plugin.is_a?(String)
-   td_agent_gem plugin do
-     plugin true
-   end
+    td_agent_gem plugin do
+      plugin true
+    end
   end
 end
 
