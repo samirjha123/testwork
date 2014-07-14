@@ -23,6 +23,16 @@ directory '/etc/td-agent/' do
 end
 
 case node['platform']
+when "ubuntu"
+  dist = node['lsb']['codename']
+  source = (dist == 'precise') ? "http://packages.treasure-data.com/precise/" : "http://packages.treasure-data.com/debian/"
+  apt_repository "treasure-data" do
+    uri source
+    distribution dist
+    components ["contrib"]
+    key "http://packages.treasure-data.com/debian/RPM-GPG-KEY-td-agent"
+    action :add
+  end
 when "centos", "redhat", "amazon"
   yum_repository "treasure-data" do
     url "http://packages.treasure-data.com/redhat/$basearch"
