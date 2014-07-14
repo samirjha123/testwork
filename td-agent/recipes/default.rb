@@ -23,7 +23,6 @@ directory '/etc/td-agent/' do
 end
 
 case node['platform']
-
 when "centos", "redhat", "amazon"
   yum_repository "treasure-data" do
     url "http://packages.treasuredata.com/redhat/$basearch"
