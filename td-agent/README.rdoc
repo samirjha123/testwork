@@ -116,10 +116,10 @@ If true, no need to prefix the gem name w/ “fluent-plugin-”. Defaults to fal
 
 Examples
 
-This installs fluent-plugin-datacounter (v0.2.0)
+This installs fluent-plugin-datacounter (v0.1.8)
 
 td_agent_gem "datacounter" do
-  version "0.2.0"
+  version "0.1.8"
   plugin true
 end
 This installs the latest version of aws-sdk
