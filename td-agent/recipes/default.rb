@@ -1,3 +1,10 @@
+#
+# Cookbook Name:: td-agent
+# Recipe:: default
+#
+# Copyright 2011, Treasure Data, Inc.
+#
+
 group 'td-agent' do
   group_name 'td-agent'
   gid        403
