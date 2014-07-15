@@ -1,11 +1,11 @@
-= Description
+=Description
 Installs a Java. Uses OpenJDK by default but supports installation of Oracle's JDK.
 
 This cookbook also provides the java_ark LWRP which other java cookbooks can use to install java-related applications from binary packages.
 
 The java_ark LWPR may move to its own cookbook at some point in the future as its functionality is useful for other purposes.
 
-= Requirements
+=Requirements
 Platform
 
 Debian, Ubuntu
@@ -31,7 +31,7 @@ openjdk
 
 This recipe installs the openjdk flavor of Java.
 
-= Resources/Providers
+=Resources/Providers
 This LWRP provides an easy way to manage java applications. It uses the LWRP arkive (deliberately misspelled). It is an arkive and not an "archive" because the java_ark lwrp is not the same as a java archive or "jar". Essentially, you provide the java_ark with the URL to a tarball and the commands within the extracted result that you want symlinked to /usr/bin/
 
 The java_ark LWPR may move to its own cookbook at some point in the future as its functionality is useful for other purposes.
@@ -51,7 +51,7 @@ owner: owner of extracted directory, set to "root" by default
 default: whether this the default installation of this package, boolean true or false
 Examples
 
-= Usage
+=Usage
 Simply include the java recipe where ever you would like Java installed.
 
 Changes
