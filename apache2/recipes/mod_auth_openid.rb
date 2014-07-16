@@ -29,19 +29,8 @@ make_cmd = value_for_platform_family(
   'default' => 'make'
 )
 
-case node['platform_family']
-when 'arch'
-  include_recipe 'pacman::default'
-
-  package 'tidyhtml'
-
-  pacman_aur openid_dev_pkgs.first do
-    action [:build, :install]
-  end
-else
-  openid_dev_pkgs.each do |pkg|
+openid_dev_pkgs.each do |pkg|
     package pkg
-  end
 end
 
 case node['platform_family']
