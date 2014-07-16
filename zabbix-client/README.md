@@ -179,15 +179,6 @@ of a port the database exposes.
 
 Supports platforms: debian and ubuntu
 
-Cookbook dependencies:
-
-* apache2
-* nginx
-* database, >= 1.0.0
-* mysql, >= 1.2.0
-* ufw, >= 0.6.1
-* silverware
-
 
 ## Attributes
 
