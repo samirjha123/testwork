@@ -1,36 +1,76 @@
+# Author:: Nacer Laradji (<nacer.laradji@gmail.com>)
+# Cookbook Name:: zabbix
+# Recipe:: default
 #
-# Cookbook Name::       zabbix
-# Description::         Sets up Zabbix user and directories shared by agent and server
-# Recipe::              default
-# Author::              Dhruv Bansal (<dhruv@infochimps.com>), Nacer Laradji (<nacer.laradji@gmail.com>)
+# Copyright 2011, Efactures
 #
-# Copyright 2012-2013, Infochimps
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Apache 2.0
 #
 
-#daemon_user(:zabbix) do
- # comment       "zabbix runner"
-  #shell         "/bin/bash"
-#end
-
-# These directories are used by both server & agent installations
-standard_dirs('zabbix') do
-  directories :conf_dir, :pid_dir
-end
-%w[include external_scripts alert_scripts].each do |sub_dir|
-  directory File.join(node[:zabbix][:conf_dir], sub_dir) do
+# Create zabbix group
+group node['zabbix']['login'] do
+  gid node['zabbix']['gid']
+  if node['zabbix']['gid'].nil? 
+    action :nothing
+  else
     action :create
-    mode   '0755'
   end
 end
+
+# Create zabbix User
+user node['zabbix']['login'] do
+  comment "zabbix User"
+  home node['zabbix']['install_dir']
+  shell node['zabbix']['shell']
+  uid node['zabbix']['uid']
+  gid node['zabbix']['gid'] 
+end
+
+# Define root owned folders
+root_dirs = [
+  node['zabbix']['etc_dir'],
+  node['zabbix']['install_dir'],
+  "#{node['zabbix']['install_dir']}/bin",
+  "#{node['zabbix']['install_dir']}/sbin",
+  "#{node['zabbix']['install_dir']}/share",
+  node['zabbix']['external_dir'],
+  node['zabbix']['server']['include_dir'],
+  node['zabbix']['agent']['include_dir'],
+  node['zabbix']['alert_dir'],
+  node['zabbix']['src_dir']
+]
+
+# Create root folders
+root_dirs.each do |dir|
+  directory dir do
+    owner "root"
+    group "root"
+    mode "755"
+    recursive true
+  end
+end
+
+# Define zabbix owned folders
+zabbix_dirs = [
+  node['zabbix']['log_dir'],
+  node['zabbix']['run_dir']
+]
+
+# Create zabbix folders
+zabbix_dirs.each do |dir|
+  directory dir do
+    owner node['zabbix']['login']
+    group node['zabbix']['group']
+    mode "755"
+    recursive true
+    # Only execute this if zabbix can't write to it. This handles cases of
+    # dir being world writable (like /tmp)
+    # [ File.word_writable? doesn't appear until Ruby 1.9.x ]
+    not_if "su #{node['zabbix']['login']} -c \"test -d #{dir} && test -w #{dir}\""
+  end
+end
+
+if node['zabbix']['agent']['install']
+  include_recipe "zabbix::agent_#{node['zabbix']['agent']['install_method']}"
+end
+

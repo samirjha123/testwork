@@ -35,9 +35,7 @@ class Chef
         def action_create
           unless exists?
             begin
-              statement = "CREATE USER `#{@new_resource.username}`@`#{@new_resource.host}`"
-              statement += " IDENTIFIED BY '#{@new_resource.password}'" if @new_resource.password
-              db.query(statement)
+              db.query("CREATE USER `#{@new_resource.username}`@`#{@new_resource.host}` IDENTIFIED BY '#{@new_resource.password}'")
               @new_resource.updated_by_last_action(true)
             ensure
               close
@@ -61,15 +59,14 @@ class Chef
             # does password look like MySQL hex digest?
             # (begins with *, followed by 40 hexadecimal characters)
             if (/(\A\*[0-9A-F]{40}\z)/i).match(@new_resource.password) then
-              password = filtered = "PASSWORD '#{Regexp.last_match[1]}'"
+              password = filtered = "PASSWORD '#{$1}'"
             else
               password = "'#{@new_resource.password}'"
               filtered = '[FILTERED]'
             end
-            grant_statement = "GRANT #{@new_resource.privileges.join(', ')} ON #{@new_resource.database_name && @new_resource.database_name != '*' ? "`#{@new_resource.database_name}`" : '*'}.#{@new_resource.table && @new_resource.table != '*' ? "`#{@new_resource.table}`" : '*'} TO `#{@new_resource.username}`@`#{@new_resource.host}` IDENTIFIED BY "
-            with_grant_option = @new_resource.grant_option == true ? ' WITH GRANT OPTION ' : ''
+            grant_statement = "GRANT #{@new_resource.privileges.join(', ')} ON #{@new_resource.database_name ? "`#{@new_resource.database_name}`" : '*'}.#{@new_resource.table ? "`#{@new_resource.table}`" : '*'} TO `#{@new_resource.username}`@`#{@new_resource.host}` IDENTIFIED BY "
             Chef::Log.info("#{@new_resource}: granting access with statement [#{grant_statement}#{filtered}]")
-            db.query(grant_statement + password + with_grant_option)
+            db.query(grant_statement + password)
             @new_resource.updated_by_last_action(true)
           ensure
             close
@@ -80,6 +77,7 @@ class Chef
         def exists?
           db.query("SELECT User,host from mysql.user WHERE User = '#{@new_resource.username}' AND host = '#{@new_resource.host}'").num_rows != 0
         end
+
       end
     end
   end

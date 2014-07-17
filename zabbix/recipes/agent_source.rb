@@ -1,39 +1,80 @@
+# Author:: Nacer Laradji (<nacer.laradji@gmail.com>)
+# Cookbook Name:: zabbix
+# Recipe:: agent_source
 #
-# Cookbook Name::       zabbix
-# Description::         Downloads, builds, configures, & launches Zabbix agent from source.
-# Recipe::              agent_source
-# Author::              Dhruv Bansal (<dhruv@infochimps.com>), Nacer Laradji (<nacer.laradji@gmail.com>)
+# Copyright 2011, Efactures
 #
-# Copyright 2012-2013, Infochimps
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Apache 2.0
 #
 
-case node[:platform]
+case node['platform']
 when "ubuntu","debian"
+  # install some dependencies
   %w{ fping libcurl3 libiksemel-dev libiksemel3 libsnmp-dev libiksemel-utils libcurl4-openssl-dev }.each do |pck|
-    package "#{pck}"
+    package pck do
+      action :install
+    end
   end
-when "centos", "redhat"
-  # do nothing special?
-else
-  warn "No #{node.platform} support yet for building Zabbix agent from source"
+  init_template = 'zabbix_agentd.init.erb'
+  
+when "redhat","centos","scientific","amazon"
+    include_recipe "yum::epel"
+    %w{ fping curl-devel iksemel-devel iksemel-utils net-snmp-libs net-snmp-devel openssl-devel redhat-lsb }.each do |pck|
+      package pck do
+        action :install
+      end
+    end
+  init_template = 'zabbix_agentd.init-rh.erb'
 end
 
-install_from_release('zabbix') do
-  action        [:configure_with_autoconf, :install_with_make]
-  release_url   node.zabbix.release_url
-  version       node.zabbix.agent.version
-  autoconf_opts ['--enable-agent'].concat(node.zabbix.agent.configure_options)
-  not_if        { File.exist?('/usr/local/bin/zabbix_agentd') }
+# Install configuration
+template "#{node['zabbix']['etc_dir']}/zabbix_agentd.conf" do
+  source "zabbix_agentd.conf.erb"
+  owner "root"
+  group "root"
+  mode "644"
+  notifies :restart, "service[zabbix_agentd]"
+end
+
+# Install Init script
+template "/etc/init.d/zabbix_agentd" do
+  source init_template
+  owner "root"
+  group "root"
+  mode "754"
+end
+
+# Define zabbix_agentd service
+service "zabbix_agentd" do
+  supports :status => true, :start => true, :stop => true, :restart => true
+  action [ :enable ]
+end
+
+# --prefix is controlled by install_dir
+node['zabbix']['agent']['configure_options'].delete_if do |option|
+  option.match(/\s*--prefix(\s|=).+/)
+end
+
+# installation of zabbix bin
+script "install_zabbix_agent" do
+  interpreter "bash"
+  user "root"
+  cwd node['zabbix']['src_dir']
+  action :nothing
+  notifies :restart, "service[zabbix_agentd]"
+  code <<-EOH
+  rm -rf /tmp/zabbix-#{node['zabbix']['agent']['version']}
+  tar xvfz zabbix-#{node['zabbix']['agent']['version']}-agent.tar.gz -C /tmp
+  mv /tmp/zabbix-#{node['zabbix']['agent']['version']} zabbix-#{node['zabbix']['agent']['version']}-agent
+  (cd zabbix-#{node['zabbix']['agent']['version']}-agent && ./configure --enable-agent --prefix=#{node['zabbix']['install_dir']} #{node['zabbix']['agent']['configure_options'].join(" ")})
+  (cd zabbix-#{node['zabbix']['agent']['version']}-agent && make install)
+  EOH
+end
+
+# Download zabbix source code
+remote_file "#{node['zabbix']['src_dir']}/zabbix-#{node['zabbix']['agent']['version']}-agent.tar.gz" do
+  source "http://downloads.sourceforge.net/project/zabbix/#{node['zabbix']['agent']['branch']}/#{node['zabbix']['agent']['version']}/zabbix-#{node['zabbix']['agent']['version']}.tar.gz"
+  mode "0644"
+  action :create_if_missing
+  notifies :run, "script[install_zabbix_agent]", :immediately
 end

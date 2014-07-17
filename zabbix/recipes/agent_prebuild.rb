@@ -1,39 +1,65 @@
+# Author:: Nacer Laradji (<nacer.laradji@gmail.com>)
+# Cookbook Name:: zabbix
+# Recipe:: agent_prebuild
 #
-# Cookbook Name::       zabbix
-# Description::         Downloads, configures, & launches pre-built Zabbix agent
-# Recipe::              agent_prebuild
-# Author::              Dhruv Bansal (<dhruv@infochimps.com>), Nacer Laradji (<nacer.laradji@gmail.com>)
+# Copyright 2011, Efactures
 #
-# Copyright 2012-2013, Infochimps
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Apache 2.0
 #
 
-case node.kernel.machine
-when "x86_64"
-  zabbix_arch = "amd64"
-when "i686"
-  zabbix_arch = "i386"
-else
-  warn("Possibly unsupported architecture '#{node.kernel.machine}' for Zabbix agent.")
-  zabbix_arch = node.kernel.machine
+# Install prerequisite RPM
+if node['platform_family'] == "rhel"
+  package "redhat-lsb"
 end
 
-install_from_release('zabbix_agent') do
-  action           :install
-  release_url      node.zabbix.agent.prebuild_url.gsub(/:kernel:/,node.zabbix.agent.prebuild_kernel).gsub(/:arch:/,zabbix_arch)
-  version          node.zabbix.agent.version
-  has_binaries     %w[bin/zabbix_sender bin/zabbix_get sbin/zabbix_agent sbin/zabbix_agentd]
-  strip_components 0            # the tarball is flat!
-  not_if           { File.exist?('/usr/local/bin/zabbix_agentd') }
+# Install Init script
+template "/etc/init.d/zabbix_agentd" do
+  source value_for_platform([ "centos", "redhat", "scientific", "oracle" ] => {"default" => "zabbix_agentd.init-rh.erb"}, "default" => "zabbix_agentd.init.erb")
+  owner "root"
+  group "root"
+  mode "754"
 end
+
+# Define zabbix_agentd service
+service "zabbix_agentd" do
+  supports :status => true, :start => true, :stop => true, :restart => true
+  action [ :enable ]
+end
+
+# Install configuration
+template "#{node['zabbix']['etc_dir']}/zabbix_agentd.conf" do
+  source "zabbix_agentd.conf.erb"
+  owner "root"
+  group "root"
+  mode "644"
+  notifies :restart, "service[zabbix_agentd]"
+end
+
+# Define arch for binaries
+if node['kernel']['machine'] == "x86_64"
+  $zabbix_arch = "amd64"
+elsif node['kernel']['machine'] == "i686"
+  $zabbix_arch = "i386"
+end
+
+# installation of zabbix bin
+script "install_zabbix_agent" do
+  interpreter "bash"
+  user "root"
+  cwd node['zabbix']['install_dir']
+  action :nothing
+  notifies :restart, "service[zabbix_agentd]"
+  code <<-EOH
+  tar xvfz #{node['zabbix']['src_dir']}/zabbix_agents_#{node['zabbix']['agent']['version']}.linux2_6.#{$zabbix_arch}.tar.gz
+  EOH
+end
+  
+# Download and intall zabbix agent bins.
+remote_file "#{node['zabbix']['src_dir']}/zabbix_agents_#{node['zabbix']['agent']['version']}.linux2_6.#{$zabbix_arch}.tar.gz" do
+  source "http://www.zabbix.com/downloads/#{node['zabbix']['agent']['version']}/zabbix_agents_#{node['zabbix']['agent']['version']}.linux2_6.#{$zabbix_arch}.tar.gz"
+  mode "0644"
+  action :create_if_missing
+  notifies :run, "script[install_zabbix_agent]", :immediately
+end
+
+

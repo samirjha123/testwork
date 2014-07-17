@@ -1,286 +1,247 @@
-# Zabbix Chef Cookbook
+DESCRIPTION:
+============
 
-Installs/Configures Zabbix server, agent, database, and web frontend.
+This cookbook install zabbix-agent and zabbix-server.
 
-* Cookbook source:   [http://github.com/infochimps-labs/ironfan-pantry](http://github.com/infochimps-labs/ironfan-pantry)
-* Ironfan tools: [http://github.com/infochimps-labs/ironfan](http://github.com/infochimps-labs/ironfan)
-* Homebase (shows cookbook in use): [http://github.com/infochimps-labs/ironfan-homebase](http://github.com/infochimps-labs/ironfan-homebase)
+By defaut the cookbook install zabbix-agent, check the attribute for enable/disable zabbix_server / web or disable zabbix_agent installation.
 
-## Overview
+Default login password for zabbix frontend is admin / zabbix  CHANGE IT !
 
-This cookbook is supports Zabbix >= 2.0.0.
 
-### Zabbix Server
+REQUIREMENTS:
+=============
 
-The core of a Zabbix installation is the
-[https://www.zabbix.com/documentation/2.0/manual/concepts/server](Zabbix
-server), installed with the `zabbix::server` recipe.
+Please include the default recipe before using any other recipe. 
 
-The server relies on a (SQL-like) database which can be created with
-the `zabbix::database` recipe.  Only MySQL is supported at present.
+Installing agent is the default behavior.
 
-Since version 2.0.0, Zabbix also provides a
-[https://www.zabbix.com/documentation/2.0/manual/concepts/java](Java
-gateway) to allow for monitoring Java applications via JMX.  The
-`zabbix::server` recipe sets up the Java gateway automatically if the
-`node[:zabbix][:java_gateway][:install]` is true (it is by default).
+Example :
 
-### Zabbix Agent
+"recipe[zabbix]"
 
-A Zabbix agent running on each machine you want to monitor is required
-and set up by the `zabbix::agent` recipe.
+OR
 
-### Zabbix PHP Frontend
+"recipe[zabbix]",  
+"recipe[zabbix::server]"
 
-Zabbix's PHP frontend is set up using the `zabbix::web` recipe.  The
-only supported web server is nginx.
 
-### Zabbix Database
+ATTRIBUTES:
+===========
 
-Zabbix requires an (SQL-like) database, installed with the
-`zabbix::database` recipe.  The only supported database is MySQL at
-the moment.
+Don't forget to set :
 
-This recipe also sets up a Zabbix API user on top of the insecure
-default user that comes with Zabbix.
+	node.set['zabbix']['agent']['servers'] = ["Your_zabbix_server.com","secondaryserver.com"]
+	node.set['zabbix']['web']['fqdn'] or you will not have the zabbix web interface
 
-## Usage:
+Note :
 
-In addition to the basic recipes that set up the agent, the server, or
-the web frontend, this cookbook contains LWRPs for Zabbix resources
-like hosts, host groups, items, & triggers.
+A Zabbix agent running on the Zabbix server will need to :
 
-These can be used directly in cookbooks to create Zabbix integrations.
-Say we're setting up a database and we need to monitor the performance
-of a port the database exposes.
+* use a different account than the on the server uses or it will be able to spy on private data.
+* specify the local Zabbix server using the localhost (127.0.0.1, ::1) address.
 
-        # From my_database/monitoring.rb
+example : 
 
-        # First we have to make sure we're connecting to the Zabbix API
-        connect_to_zabbix_api!
+Server :
+--------
 
-        # Now we can create a host to represent the new database
-        zabbix_host "my-database" do
-          host_groups ["Foo_Databases"]
-          templates   ["Foo_Database_Template"]
-          virtual     true # this is not a *real* machine, just a Zabbix host
-          action      :create
-        end
+	node.set['zabbix']['server']['branch'] = "ZABBIX%20Latest%20Stable"
+	node.set['zabbix']['server']['version'] = "2.0.0"
+	ndoe.set['zabbix']['server']['install_method'] = "source"
 
-        # And an item for the host
-        zabbix_item "Performance of Foo database connection" do
-          host 'my-database'
-          key  'tcp_perf,8080'
-          value_type :float
-          units 's'
+Agent :
+-------
 
-          # 'simple' means the Zabbix server executes these checks, as
-          #  appropriate for a remote port check
-          type :simple
+	node.set['zabbix']['agent']['branch'] = "ZABBIX%20Latest%20Stable"
+	node.set['zabbix']['agent']['version'] = "2.0.0"
+	node.set['zabbix']['agent']['install_method'] = "prebuild"
 
-          action :create
-        end
+AWS RDS :
+---------
 
-        # And now a trigger on the item
-        zabbix_trigger "Response time too high on Foo database connection" do
-          host 'my-database'
-          priority :warning
+Set this attribute with to use RDS for the Zabbix database. Default database remains localhost MySQL.
 
-          # Fire if the item 'tcp_perf,8080' on the host 'my-database' has an
-          # 'avg' value over the last '300' seconds that is greater than '2'
-          # -- i.e., fire if the average response connection time of the Foo
-          # database's portspikes to 2 seconds anytime over the last 5
-          # minutes.
-          expression "{my-database:tcp_perf,8080.avg(300)>2}"
+	node.set['zabbix']['server']['db_install_method'] = "rds_mysql"
 
-          action   :create
-        end
+These attributes must also be set. Values below are pre-defined.
 
-### TODO:
+	node.set['zabbix']['server']['rds_master_user'] = ""
+	node.set['zabbix']['server']['rds_master_password'] = ""
+	node.set['zabbix']['server']['rds_dbhost'] = ""
+	node.set['zabbix']['server']['rds_dbport'] = "3306"
+	node.set['zabbix']['server']['rds_dbname'] = "zabbix"
+	node.set['zabbix']['server']['rds_dbuser'] = "zabbix"
+	node.set['zabbix']['server']['rds_dbpassword'] = ""
 
-- Support more platform on agent side centos, windows ?
-- Add support for ufw , this way search agent how need to have accces to zabbix_server:10051 <-> zabbix_agent:10050
+MySQL :
+-------
 
-### CHANGELOG:
+Set the MySQL zabbix account password:
 
-0.0.19
-	- forked opscode version for an opinionated and Ironfan compatible version
-	- allow for either apache/nginx to sit in front of php
-	- alert scripts for sending email and SMS
-	- resources/providers for hosts, host groups, items, triggers using rubix integration
-	- recipe for creating hosts from the current set of chef nodes
-	- recipe for creating a pipe at /dev/zabbix for writing dynamically to zabbix
+        node.set['zabbix']['server']['dbpassword'] = "some-password"
 
-0.0.18
-	- Fix sysconfdir to point to /etc/zabbix on recipe server_source 
-	- Fix right for folder frontends/php on recipe web
-	- Hardcode the PATH of conf file in initscript
-	- Agent source need to build on a other folder
-	- Add --prefix option to default attributes when using *-source recipe
+If you are going to run the MySQL server on the same host as the Zabbix server you must include
+
+"recipe[mysql::server]"
+
+in the run_list before the zabbix recipes.  Otherwise you must define the host that mysqld runs on
+
+        node.set['zabbix']['server']['dbhost'] = "some-host.tld"
+
+USAGE :
+=======
+
+Be carefull when you update your server version, you need to run the sql patch in /opt/zabbix-$VERSION.
+
+TODO :
+======
+
+* Support more platform on agent side windows ?
+* LWRP Magic ?
+
+CHANGELOG :
+===========
+### 0.0.41
+	* Format metadata and add support for Oracle linux (Thanks to tas50 and his love for oracle Linux)
+	* Fix about redhat LSB in agent-prebuild recipe (Thanks nutznboltz)
+	* Fix Add missing shabang for init file. (Thanks justinabrahms)
+	* Fix FC045 foodcritic
+	* new dependencies version on database and mysql cookbook
+
+### 0.0.40
+	* Refactoring for passing foodcritic with help from dkarpenko
+	* Added new attribute for server service : log_level
+	* Added new attribute for server service : max_housekeeper_delete & housekeeping_frequency
+	* Modified firewall recipe to accept connection to localhost zabbix_server
+
+### 0.0.39
+	* Added zabbix bin patch in init script (deprecate change made in 0.0.38)
+	* Changed default zabbix version to 2.0.3
+
+### 0.0.38
+	* Added zabbix_agent bin dir into PATH for Debian/Ubuntu (Some script need zabbix_sender)
 	
-0.0.17
-	- Don't mess with te PID, PID are now in /tmp
+### 0.0.37
+	* Having run dir in /tmp is not so good (Guilhem Lettron)
+
+### 0.0.36
+	* added restart option to zabbix_agentd service definitions (Paul Rossman Patch)
+
+### 0.0.35
+	* Fix from Amiando about server_alias how should be a Array.
+	* Fix from Guilhem about default run_dir be /tmp,it can be a big problem.
+
+### 0.0.34
+	* remove the protocol filter on firewall.
+
+### 0.0.33
+	* Added ServerActive configuration option for Zabbix agents (Paul Rossman Patch)
 	
-0.0.16 
-	- Add depencies for recipe agent_source
-	- Add AlertScriptsPath folder and option for server.
+### 0.0.32
+	* Fix a issue about order in the declaration of service and the template for recipes agent_*
+
+### 0.0.31
+	* Readme typo
 	
-0.0.15
-	- Add firewall magic for communication between client and server
-0.0.14
-	- Correction on documentation
-0.0.13
-	- Fix some issue on web receipe.
+### 0.0.30
+	* Thanks to Paul Rossman for this release
+	* Zabbix default install version is now 2.0.0
+	* Option to install Zabbix database on RDS node (default remains localhost MySQL)
+	* MySQL client now installed with Zabbix server
+	* Added missing node['zabbix']['server']['dbport'] to templates/default/zabbix_web.conf.php.erb
+	* Fixed recipe name typo in recipes/web.rb
 	
-0.0.12 
-	- Change default value of zabbix.server.dbpassword to nil
-
-0.0.11
-	- Remove mikoomo
-	- Still refactoring
+### 0.0.29
+	* Thanks to Steffen Gebert for this release
+	* WARNING! this can break stuff : typo error on attribute file default['zabbix']['agent']['server'] -> default['zabbix']['agent']['servers']
+	* Evaluate node.zabbix.agent.install as boolean, not as string
+	* Respect src_dir in mysql_setup
+	 
+### 0.0.28
+	* Thanks to Steffen Gebert for this release
+	* Use generic sourceforge download URLs
+	* Fix warning string literal in condition
+	* Deploy zabbix.conf.php file for web frontend
+	* Add "status" option to zabbix_server init script
+	* Make MySQL populate scripts compatible with zabbix 2.0
+	* Add example for Chef Solo usage to Vagrantfile
 	
-0.0.10
-	- Preparation for multiple type installation and some refactoring
-	- Support the installation of a beta version when using the install_method == source and changing the attribute branch
-
-0.0.9
-	- Tune of mikoomi for running on agent side.
-
-0.0.8 
-	- Fix some major issu
+### 0.0.27
+	* Configuration error about include_dir in zabbix_agentd.conf.erb	
 	
-0.0.7 
-	- Add some love to php value
-	- Now recipe mysql_setup populate the database
-	- Minor fix
+###	0.0.26
+	* zabbix agent and zabbix server don't want the same include_dir, be carefull if you use include_dir
+	* noob error on zabbix::server
 	
-0.0.6 
-	- Change the name of the web_app to fit the fqdn
+### 0.0.25
+	* Don't try to use String as Interger !
+	
+### 0.0.24
+	* Markdown Format for Readme.md
+	
+### 0.0.23
+	* Some Foodcritic
 
-## Recipes 
+### 0.0.22
+    * Bug in metadata dependencies
+    * Firewall does not fix the protocol anymore
 
-* `agent`                    - Installs and launches Zabbix agent.
-* `agent_prebuild`           - Downloads, configures, & launches pre-built Zabbix agent
-* `agent_source`             - Downloads, builds, configures, & launches Zabbix agent from source.
-* `create_hosts`             - Create Hosts
-* `database`                 - Configures Zabbix database.
-* `database_mysql`           - Configures Zabbix MySQL database.
-* `default`                  - Sets up Zabbix directory structure & user.
-* `firewall`                 - Configures firewall access between Zabbix server & agents.
-* `server`                   - Installs and launches Zabbix server.
-* `server_sends_email`       - Configures Zabbix server to be able to send email via a remote SMTP server.
-* `server_sends_texts`       - Configures Zabbix server to be able to send texts using Twilio.
-* `server_source`            - Downloads, builds, configures, & launches Zabbix server from source.
-* `web`                      - Configures PHP-driven, reverse-proxied Zabbix web frontend.
-* `web_apache`               - Configures PHP-driven, reverse-proxied Zabbix web frontend using Apache.
-* `web_nginx`                - Configures PHP-driven, reverse-proxied Zabbix web frontend using nginx.
-
-## Integration
-
-Supports platforms: debian and ubuntu
+### 0.0.21
+	* Added Patch from Harlan Barnes <hbarnes@pobox.com> his patch include centos/redhat zabbix_server support.
+	* Added Patch from Harlan Barnes <hbarnes@pobox.com> his patch include directory has attribute.
+	* Force a minimum version for apache2 cookbook
 
 
-## Attributes
+### 0.0.20
+    * Added Patch from Harlan Barnes <hbarnes@pobox.com> his patch include centos/redhat zabbix_agent support.
 
-* `[:zabbix][:home_dir]`              -  (default: "/usr/local/share/zabbix")
-  - The base installation directory for Zabbix.
-* `[:zabbix][:host_groups]`           - 
-  - Host groups for this node in Zabbix.
-* `[:zabbix][:templates]`             - 
-  - Templates for this node in Zabbix.
-* `[:zabbix][:user]`                  -  (default: "zabbix")
-* `[:zabbix][:agent][:servers]`       - 
-  - Hostnames/IPs of servers the Zabbix agent will accept connections from.
-* `[:zabbix][:agent][:configure_options]` - 
-  - Options passed to ./configure script when building agent.
-* `[:zabbix][:agent][:branch]`        -  (default: "ZABBIX%20Latest%20Stable")
-  - Name of the Zabbix branch to use.
-* `[:zabbix][:agent][:version]`       -  (default: "1.8.5")
-  - Version of the Zabbix agent to install.
-* `[:zabbix][:agent][:install_method]` -  (default: "prebuild")
-  - How to install the Zabbix agent: 'prebuild' or 'source'.
-* `[:zabbix][:agent][:log_dir]`       -  (default: "/var/log/zabbix_agent")
-  - The log directory for the Zabbix agent.
-* `[:zabbix][:agent][:create_host]`   -  (default: "true")
-  - Whether to create a Zabbix host for this node.
-* `[:zabbix][:server][:version]`      -  (default: "1.8.8")
-  - The version of the Zabbix server to install.
-* `[:zabbix][:server][:branch]`       -  (default: "ZABBIX%20Latest%20Stable")
-  - Name of the Zabbix branch to use.
-* `[:zabbix][:server][:install_method]` -  (default: "source")
-  - How to install the zabbix server: source.
-* `[:zabbix][:server][:configure_options]` - 
-  - Options passed to the ./configure script when building the Zabbix server.
-* `[:zabbix][:server][:log_dir]`      -  (default: "/var/log/zabbix_server")
-  - The log directory for the Zabbix server.
-* `[:zabbix][:database][:install_method]` -  (default: "mysql")
-  - Method of installing the database: only 'mysql'.
-* `[:zabbix][:database][:host]`       -  (default: "localhost")
-  - Host for the Zabbix database server.
-* `[:zabbix][:database][:port]`       -  (default: "3306")
-  - Port for the  Zabbix database server.
-* `[:zabbix][:database][:root_user]`  - 
-  - Root user for the Zabbix database server.
-* `[:zabbix][:database][:root_password]` - 
-  - Root password for the Zabbix database server.
-* `[:zabbix][:database][:user]`       -  (default: "zabbix")
-  - User for the Zabbix database.
-* `[:zabbix][:database][:password]`   - 
-  - Password for the Zabbix database user.
-* `[:zabbix][:database][:name]`       -  (default: "zabbix")
-  - Name of the Zabbix database.
-* `[:zabbix][:web][:fqdn]`            - 
-  - The FQDN for the web application when using Apache to serve the Zabbix web frontend.
-* `[:zabbix][:web][:bind_ip]`         -  (default: "127.0.0.1")
-  - The local IP to bind PHP at when using nginx to serve the Zabbix web frontend.
-* `[:zabbix][:web][:port]`            -  (default: "9101")
-  - The local port to bind PHP at when using nginx to serve the Zabbix web frontend.
-* `[:zabbix][:web][:log_dir]`         -  (default: "/var/log/zabbix_web")
-  - The directory for the Zabbix web frontend's logs.
-* `[:zabbix][:web][:install_method]`  -  (default: "apache")
-  - The webserver to use in front of PHP: 'apache' or 'nginx'.
-* `[:zabbix][:web][:timezone]`        -  (default: "Europe/London")
-  - The timezone to display date information in.
-* `[:zabbix][:api][:path]`            -  (default: "api_jsonrpc.php")
-  - The path on the Zabbix web frontend from which the Zabbix API is served.
-* `[:zabbix][:api][:username]`        - 
-  - The Zabbix user for talking to Zabbix's API.
-* `[:zabbix][:api][:password]`        - 
-  - The Zabbix user's password for talking to Zabbix's API.
-* `[:zabbix][:smtp][:from]`           -  (default: "fixme@example.com")
-  - The From: address used by Zabbix to send email.
-* `[:zabbix][:smtp][:server]`         -  (default: "smtp.example.com")
-  - The SMTP server used by Zabbix to send email.
-* `[:zabbix][:smtp][:port]`           -  (default: "25")
-  - The SMTP server's port used by Zabbix to send email.
-* `[:zabbix][:smtp][:username]`       -  (default: "zabbix")
-  - The username used by Zabbix to send email.
-* `[:zabbix][:smtp][:password]`       -  (default: "fixme")
-  - The password used by Zabbix to send email.
-* `[:zabbix][:twilio][:id]`           -  (default: "fixme")
-  - The Twilio ID used by Zabbix to send SMS.
-* `[:zabbix][:twilio][:token]`        -  (default: "fixme")
-  - The Twilio token used by Zabbix to send SMS.
-* `[:zabbix][:twilio][:phone]`        -  (default: "fixme")
-  - The Twilio phone number used by Zabbix to send SMS.
-* `[:users][:zabbix][:uid]`           -  (default: "447")
-* `[:groups][:zabbix][:gid]`          -  (default: "447")
+### 0.0.19
+    * Fix README
 
-## License and Author
+### 0.0.18
+	* Fix sysconfdir to point to /etc/zabbix on recipe server_source 
+	* Fix right for folder frontends/php on recipe web
+	* Hardcode the PATH of conf file in initscript
+	* Agent source need to build on a other folder
+	* Add --prefix option to default attributes when using *-source recipe
+	
+### 0.0.17
+	* Don't mess with te PID, PID are now in /tmp
+	
+### 0.0.16 
+	* Add depencies for recipe agent_source
+	* Add AlertScriptsPath folder and option for server.
+	
+### 0.0.15
+	* Add firewall magic for communication between client and server
 
-Author::                Dhruv Bansal (<dhruv@infochimps.com>)
-Copyright::             2011, Dhruv Bansal
+### 0.0.14
+	* Correction on documentation
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+### 0.0.13
+	* Fix some issue on web receipe.
+	
+### 0.0.12 
+	* Change default value of zabbix.server.dbpassword to nil
 
-    http://www.apache.org/licenses/LICENSE-2.0
+### 0.0.11
+	* Remove mikoomo
+	* Still refactoring
+	
+### 0.0.10
+	* Preparation for multiple type installation and some refactoring
+	* Support the installation of a beta version when using the install_method == source and changing the attribute branch
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+### 0.0.9
+	* Tune of mikoomi for running on agent side.
 
-> readme generated by [ironfan](http://github.com/infochimps-labs/ironfan)'s cookbook_munger
+### 0.0.8 
+	* Fix some major issu
+	
+### 0.0.7 
+	* Add some love to php value
+	* Now recipe mysql_setup populate the database
+	* Minor fix
+	
+### 0.0.6 
+	* Change the name of the web_app to fit the fqdn
