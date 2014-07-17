@@ -19,10 +19,10 @@
 # limitations under the License.
 #
 
-daemon_user(:zabbix) do
-  comment       "zabbix runner"
-  shell         "/bin/bash"
-end
+#daemon_user(:zabbix) do
+ # comment       "zabbix runner"
+  #shell         "/bin/bash"
+#end
 
 # These directories are used by both server & agent installations
 standard_dirs('zabbix') do
