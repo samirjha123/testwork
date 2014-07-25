@@ -1,3 +1,7 @@
+<% if node['td_agent']['includes'] %>
+include conf.d/*.conf 
+<% end %>
+<% if node['td_agent']['default_config'] %>
 ####
 ## Output descriptions:
 ##
@@ -53,3 +57,4 @@
   bind 127.0.0.1
   port 24230
 </source>
+<% end %>
